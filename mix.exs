@@ -12,5 +12,8 @@ defmodule Y4m.MixProject do
   end
 
   def application, do: []
-  defp deps, do: []
+  defp deps, do: [
+    {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
+    {:nx, "~> 0.1", only: [:test], runtime: false}
+  ]
 end
