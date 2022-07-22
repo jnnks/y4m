@@ -4,7 +4,7 @@ defmodule Y4m.MixProject do
   def project do
     [
       app: :y4m,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -28,7 +28,7 @@ defmodule Y4m.MixProject do
 
   defp package do
     [
-      files: ~w(lib .formatter.exs mix.exs README* LICENSE*),
+      files: ~w(lib .formatter.exs mix.exs CHANGELOG.md README.md LICENSE*),
       licenses: ["The Unlicense"],
       links: %{"GitHub" => "https://github.com/jnnks/y4m"}
     ]
