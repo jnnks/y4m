@@ -1,7 +1,7 @@
 defmodule Y4mReader do
-@moduledoc """
-Read properties and frames from a *.y4m file
-"""
+  @moduledoc """
+  Read properties and frames from a *.y4m file
+  """
   defstruct [:file, :properties]
   alias Y4mReader.HeaderParser
   alias Y4mReader.FrameIterator
@@ -14,11 +14,14 @@ Read properties and frames from a *.y4m file
     header = IO.read(file, :line)
 
     case HeaderParser.parse(header) do
-      {:invalid_header, details} -> {:invalid_header, details}
-      {:ok, props} -> %__MODULE__{
-        file: file,
-        properties: props
-      }
+      {:invalid_header, details} ->
+        {:invalid_header, details}
+
+      {:ok, props} ->
+        %__MODULE__{
+          file: file,
+          properties: props
+        }
     end
   end
 
@@ -84,7 +87,6 @@ Read properties and frames from a *.y4m file
     FrameIterator.init(dec)
   end
 end
-
 
 defmodule Y4mReader.HeaderParser do
   @moduledoc """
@@ -180,7 +182,7 @@ end
 defmodule Y4mReader.FrameIterator do
   defstruct [:decoder]
 
-  @spec init(%Y4mReader{}) :: %Y4mReader.FrameIterator{ }
+  @spec init(%Y4mReader{}) :: %Y4mReader.FrameIterator{}
   def init(dec) do
     %__MODULE__{decoder: dec}
   end
@@ -207,9 +209,11 @@ defimpl Enumerable, for: Y4mReader.FrameIterator do
   def reduce(%FrameIterator{}, {:halt, acc}, _fun) do
     {:halted, acc}
   end
+
   def reduce(%FrameIterator{} = iter, {:suspend, acc}, fun) do
     {:suspended, acc, &reduce(iter, &1, fun)}
   end
+
   def reduce(%FrameIterator{decoder: dec} = is, {:cont, acc}, fun) do
     case Y4mReader.next_frame(dec) do
       [y, u, v] -> reduce(is, fun.([y, u, v], acc), fun)

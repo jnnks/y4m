@@ -14,11 +14,13 @@ defmodule Y4m.MixProject do
   end
 
   def application, do: []
-  defp deps, do: [
-    {:dialyxir, "~> 1.1", only: :dev, runtime: false},
-    {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-    {:nx, "~> 0.1", only: :test, runtime: false}
-  ]
+
+  defp deps,
+    do: [
+      {:dialyxir, "~> 1.1", only: :dev, runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:nx, "~> 0.1", only: :test, runtime: false}
+    ]
 
   defp description() do
     "Collection of convenience functions to read *.y4m files."
