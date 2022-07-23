@@ -96,19 +96,8 @@ defmodule Y4mTest do
   end
 
   test "iter y4m frames" do
-    # single YUV444 pixel
-    pixel = <<255::size(8), 255::size(8), 255::size(8)>>
-
-    # build 10 frames of 2x1 pixels
-    frames =
-      1..10
-      |> Enum.map(fn _f ->
-        <<"FRAME\n", pixel::binary, pixel::binary>>
-      end)
-      |> Enum.reduce(<<>>, fn e, acc -> acc <> e end)
-
-    # build iter and take more frames than should be present
-    {:ok, file} = StringIO.open("YUV4MPEG2 W2 H1 F1:1 C444\n" <> frames)
+    file_path = TestHelper.write_test_file(10)
+    {:ok, file} = File.open(file_path)
 
     read_frames =
       Y4mReader.read(file)
@@ -117,23 +106,12 @@ defmodule Y4mTest do
       |> Enum.take(11)
 
     assert 10 == length(read_frames)
-    assert Enum.all?(read_frames, fn f -> f == [[255, 255], [255, 255], [255, 255]] end)
+    assert Enum.zip([1..10,read_frames]) |> Enum.all?(fn {i, f} -> f == [[i, i], [i, i], [i, i]] end)
   end
 
   test "iter y4m iter frames nx" do
-    # single YUV444 pixel
-    pixel = <<255::size(8), 255::size(8), 255::size(8)>>
-
-    # build 10 frames of 2x1 pixels
-    frames =
-      1..10
-      |> Enum.map(fn _f ->
-        <<"FRAME\n", pixel::binary, pixel::binary>>
-      end)
-      |> Enum.reduce(<<>>, fn e, acc -> acc <> e end)
-
-    # build iter and take more frames than should be present
-    {:ok, file} = StringIO.open("YUV4MPEG2 W2 H1 F1:1 C444\n" <> frames)
+    file_path = TestHelper.write_test_file(10)
+    {:ok, file} = File.open(file_path)
 
     read_frames =
       Y4mReader.read(file)
@@ -150,25 +128,56 @@ defmodule Y4mTest do
   end
 
   test "loop y4m" do
-    # build 10 frames of 2x1 pixels into test file
-    frames =
-      1..10
-      |> Enum.map(fn i ->
-        pixel = <<i::size(8), i::size(8), i::size(8)>>
-        <<"FRAME\n", pixel::binary, pixel::binary>>
-      end)
-      |> Enum.reduce(<<>>, fn e, acc -> acc <> e end)
-
-    File.write("/tmp/test_file.y4m", "YUV4MPEG2 W2 H1 F1:1 C444\n" <> frames)
-
+    file_path = TestHelper.write_test_file(10)
     # take more frames than in file
-    loop = Y4m.loop("/tmp/test_file.y4m")
+    loop = Y4m.loop(file_path)
     frames = Enum.take(loop, 12)
     assert 12 == length(frames)
 
     # take first frame and first frame of restarted stream
-    loop = Y4m.loop("/tmp/test_file.y4m")
+    loop = Y4m.loop(file_path)
     assert [[<<1, 1>>, <<1, 1>>, <<1, 1>>]] == Enum.take(loop, 1)
     assert [<<1, 1>>, <<1, 1>>, <<1, 1>>] == Enum.take(loop, 10) |> Enum.at(9)
+  end
+
+  test "loop y4m file in genstage" do
+    # This is a crash test.
+    # For some reason the state of the frame loop enumerable is not carried over
+    # in GenStage Producers. This will lead to a crash whenever the file is being
+    # reopened.
+    # This test is waiting for a crash for 100ms
+
+    # build 10 frames of 2x1 pixels into test file
+
+    file_path = TestHelper.write_test_file(10)
+
+    {:ok, prod} = GenStage.start_link(TestFrameProducer, [file_path])
+    {:ok, cons} = GenStage.start_link(TestFrameConsumer, [])
+
+    GenStage.sync_subscribe(cons, to: prod, max_demand: 1)
+    :timer.sleep(100)
+    GenStage.stop(prod)
+  end
+end
+
+
+defmodule TestFrameProducer do
+  use GenStage
+
+  def start_link(path), do: GenStage.start_link(__MODULE__, [path], name: __MODULE__)
+  def init(file_path), do: {:producer, Y4m.loop(file_path)}
+  def handle_demand(_demand, loop) do
+    {loop, item} = Y4mFrameLoop.next(loop)
+    {:noreply, [item], loop}
+  end
+end
+
+defmodule TestFrameConsumer do
+  use GenStage
+
+  def start_link(_), do: GenStage.start_link(__MODULE__, [], name: __MODULE__)
+  def init(_), do: {:consumer, 0}
+  def handle_events(_events, _from, _) do
+    {:noreply, [], 0}
   end
 end

@@ -8,6 +8,19 @@ defmodule Y4mFrameLoop do
       %__MODULE__{file_path: file_path, file: file, reader: reader}
     end
   end
+
+  def next(loop = %__MODULE__{file_path: path, file: file, reader: reader}) do
+    case Y4mReader.next_frame(reader) do
+      [y, u, v] -> {loop, [y, u, v]}
+
+      :eof ->
+        :ok = File.close(file)
+        {:ok, file} = File.open(path)
+        reader = Y4mReader.read(file)
+        frame = Y4mReader.next_frame(reader)
+        {%Y4mFrameLoop{reader: reader, file: file, file_path: path}, frame}
+    end
+  end
 end
 
 defimpl Enumerable, for: Y4mFrameLoop do
@@ -31,17 +44,8 @@ defimpl Enumerable, for: Y4mFrameLoop do
     {:suspended, acc, &reduce(loop, &1, fun)}
   end
 
-  def reduce(l = %Y4mFrameLoop{reader: reader, file_path: path}, {:cont, acc}, fun) do
-    case Y4mReader.next_frame(reader) do
-      [y, u, v] ->
-        reduce(l, fun.([y, u, v], acc), fun)
-
-      :eof ->
-        :ok = File.close(reader.file)
-        {:ok, file} = File.open(path)
-        reader = Y4mReader.read(file)
-        frame = Y4mReader.next_frame(reader)
-        reduce(%Y4mFrameLoop{reader: reader, file: file, file_path: path}, fun.(frame, acc), fun)
-    end
+  def reduce(loop = %Y4mFrameLoop{}, {:cont, acc}, fun) do
+    {loop, frame} = Y4mFrameLoop.next(loop)
+    reduce(loop, fun.(frame, acc), fun)
   end
 end
