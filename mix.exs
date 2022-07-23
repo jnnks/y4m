@@ -4,7 +4,7 @@ defmodule Y4m.MixProject do
   def project do
     [
       app: :y4m,
-      version: "0.2.0",
+      version: "0.2.1",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -19,7 +19,8 @@ defmodule Y4m.MixProject do
     do: [
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:nx, "~> 0.1", only: :test, runtime: false}
+      {:gen_stage, "~> 1.1.2", only: :test, runtime: false},
+      {:nx, "~> 0.1", only: :test, runtime: false},
     ]
 
   defp description() do
@@ -29,7 +30,7 @@ defmodule Y4m.MixProject do
   defp package do
     [
       files: ~w(lib .formatter.exs mix.exs CHANGELOG.md README.md LICENSE*),
-      licenses: ["The Unlicense"],
+      licenses: ["0BSD"],
       links: %{"GitHub" => "https://github.com/jnnks/y4m"}
     ]
   end
