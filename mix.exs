@@ -30,7 +30,7 @@ defmodule Y4m.MixProject do
   defp package do
     [
       files: ~w(lib .formatter.exs mix.exs CHANGELOG.md README.md LICENSE*),
-      licenses: ["The Unlicense"],
+      licenses: ["0BSD"],
       links: %{"GitHub" => "https://github.com/jnnks/y4m"}
     ]
   end
