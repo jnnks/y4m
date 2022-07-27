@@ -1,16 +1,6 @@
 # YUVMPEG2 Decoder
-Tiny collection of convenience functions to read *.y4m files and iterate over the frames.
+Collection of convenience functions to read *.y4m files and iterate over the frames.
 
-```elixir
-{:ok, file} = File.open("my_file.y4m")
+docs: https://hexdocs.pm/y4m/api-reference.html
 
-# read frames into Nx tensors
-file |> Y4m.read()
-|> Y4mReader.iter_frames()
-|> Stream.map(fn [y,u,v] -> Nx.stack([
-    Nx.from_binary(y, {:u, 8}),
-    Nx.from_binary(u, {:u, 8}),
-    Nx.from_binary(v, {:u, 8})])
-end)
-|> Enum.take(2)
-```
+hex: https://hex.pm/packages/y4m

@@ -20,7 +20,7 @@ defmodule Y4m.MixProject do
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:gen_stage, "~> 1.1.2", only: :test, runtime: false},
-      {:nx, "~> 0.1", only: :test, runtime: false},
+      {:nx, "~> 0.1", only: :test, runtime: false}
     ]
 
   defp description() do
