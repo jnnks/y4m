@@ -47,6 +47,9 @@ defimpl Enumerable, for: Y4m.Stream do
       :eof ->
         File.close(file)
         {:done, acc}
+
+      {:error, :terminated} ->
+        raise RuntimeError, "File Stream has been consumed entirely"
     end
   end
 end
