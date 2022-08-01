@@ -9,15 +9,15 @@ defmodule Y4m.FrameParser do
   defp plane_lengths(:C422, width, height),
     do: [
       width * height,
-      trunc((width * height) / 2),
-      trunc((width * height) / 2)
+      trunc(width * height / 2),
+      trunc(width * height / 2)
     ]
 
   defp plane_lengths(:C420, width, height),
     do: [
       width * height,
-      trunc((width * height) / 4),
-      trunc((width * height) / 4)
+      trunc(width * height / 4),
+      trunc(width * height / 4)
     ]
 
   @doc """

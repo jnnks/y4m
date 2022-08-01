@@ -87,10 +87,14 @@ defmodule Y4m do
   def stream(file_path) when is_binary(file_path), do: File.open!(file_path) |> Y4m.Stream.init()
 
   def write(file_path, props, frames \\ [])
-  def write(file_path, props, frames) when length(frames) == 0 , do: Y4m.Writer.init(file_path, props)
+
+  def write(file_path, props, frames) when length(frames) == 0,
+    do: Y4m.Writer.init(file_path, props)
+
   def write(file_path, props, frames) when length(frames) > 0 do
     {:ok, writer} = Y4m.Writer.init(file_path, props)
     Y4m.append(frames, writer)
   end
+
   def append(frames, writer), do: Y4m.Writer.append(frames, writer)
 end

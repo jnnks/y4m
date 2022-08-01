@@ -15,7 +15,6 @@ defmodule Y4mTest do
     assert frames == actual_frames
   end
 
-
   @tag :stream
   test "Make stream overflow" do
     {file_path, frames} = TestHelper.write_test_file(10)
@@ -50,16 +49,16 @@ defmodule Y4mTest do
     {actual_props, stream} = Y4m.stream("/tmp/test_file.y4m")
 
     assert props == actual_props
-    assert 0 == (stream |> Enum.to_list() |> length())
+    assert 0 == stream |> Enum.to_list() |> length()
   end
 
   @tag :write
   test "Write 10 y4m frames" do
     {frames, _binary} = TestHelper.get_test_frames(10, {2, 3})
-    props = %{ width: 2, height: 3, frame_rate: [2,1], color_space: :C444}
+    props = %{width: 2, height: 3, frame_rate: [2, 1], color_space: :C444}
 
     {:ok, writer} = Y4m.write("/tmp/test_file.y4m", props)
-    (frames |> Y4m.append(writer))
+    frames |> Y4m.append(writer)
     Y4m.Writer.close(writer)
 
     {_props, stream} = Y4m.stream("/tmp/test_file.y4m")
@@ -75,6 +74,7 @@ defmodule Y4mTest do
     {props, stream} = Y4m.stream(file_path)
 
     {:ok, writer} = Y4m.write("/tmp/test_file2.y4m", props)
+
     frames
     |> Y4m.append(writer)
     |> Y4m.Writer.close()
@@ -86,7 +86,8 @@ defmodule Y4mTest do
 
   test "Invert pixels of y4m file" do
     invert_pixels = fn [y, u, v] ->
-      [y, u, v] |> Enum.map(fn bin ->
+      [y, u, v]
+      |> Enum.map(fn bin ->
         for <<i::8 <- bin>>, into: "", do: <<255 - i>>
       end)
     end
@@ -96,14 +97,15 @@ defmodule Y4mTest do
 
     # invert frames
     in_frames = stream |> Enum.to_list()
+
     in_frames
-      |> Enum.map(&invert_pixels.(&1))
-      |> Y4m.append(writer)
-      |> Y4m.Writer.close()
+    |> Enum.map(&invert_pixels.(&1))
+    |> Y4m.append(writer)
+    |> Y4m.Writer.close()
 
     {props, stream} = Y4m.stream("test/example_inv.y4m")
     actual_frames = stream |> Enum.to_list()
     assert length(in_frames) == length(actual_frames)
-    assert (in_frames |> Enum.map(&invert_pixels.(&1))) == actual_frames
+    assert in_frames |> Enum.map(&invert_pixels.(&1)) == actual_frames
   end
 end

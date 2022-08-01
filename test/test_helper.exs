@@ -1,9 +1,7 @@
 ExUnit.start()
 
 defmodule TestHelper do
-
   def get_test_frames(num_frames, {w, h}) do
-
     # build 10 frames of 2x1 pixels into test file
     frames =
       0..(num_frames - 1)
@@ -13,7 +11,8 @@ defmodule TestHelper do
         [plane, plane, plane]
       end)
 
-    binary = frames
+    binary =
+      frames
       |> Enum.reduce(<<>>, fn [y, u, v], acc -> acc <> "FRAME\n" <> y <> u <> v end)
 
     {frames, binary}

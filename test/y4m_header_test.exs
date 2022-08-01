@@ -9,14 +9,14 @@ defmodule Y4mHeaderTest do
     {props, _stream} = Y4m.stream(file)
 
     assert props == %{
-            aspect_ratio: [1, 1],
-            color_space: :C444,
-            frame_rate: [2, 1],
-            height: 288,
-            interlacing: :progressive,
-            params: [["COLORRANGE", "LIMITED"], ["YSCSS", "444"]],
-            width: 512
-          }
+             aspect_ratio: [1, 1],
+             color_space: :C444,
+             frame_rate: [2, 1],
+             height: 288,
+             interlacing: :progressive,
+             params: [["COLORRANGE", "LIMITED"], ["YSCSS", "444"]],
+             width: 512
+           }
   end
 
   @tag :header
