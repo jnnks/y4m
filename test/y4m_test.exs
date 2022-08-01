@@ -71,7 +71,7 @@ defmodule Y4mTest do
   test "Copy y4m file" do
     {file_path, frames} = TestHelper.write_test_file(10, {2, 3})
 
-    {props, stream} = Y4m.stream(file_path)
+    {props, _stream} = Y4m.stream(file_path)
 
     {:ok, writer} = Y4m.write("/tmp/test_file2.y4m", props)
 
@@ -103,7 +103,7 @@ defmodule Y4mTest do
     |> Y4m.append(writer)
     |> Y4m.Writer.close()
 
-    {props, stream} = Y4m.stream("test/example_inv.y4m")
+    {_props, stream} = Y4m.stream("test/example_inv.y4m")
     actual_frames = stream |> Enum.to_list()
     assert length(in_frames) == length(actual_frames)
     assert in_frames |> Enum.map(&invert_pixels.(&1)) == actual_frames

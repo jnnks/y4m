@@ -25,7 +25,7 @@ defmodule Y4m do
   Each frame is a list of binaries.
 
       iex> {_props, stream} = Y4m.stream("test/example.y4m")
-      iex> [<<_y::binary()>>, <<_u::binary>>, <<_v::binary>>] = Enum.at(stream, 0)
+      iex> [<<_y::binary>>, <<_u::binary>>, <<_v::binary>>] = Enum.at(stream, 0)
       iex> # frames do not match because of shared state
       iex> Enum.at(stream, 0) != Enum.at(stream, 0)
       true
