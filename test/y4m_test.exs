@@ -1,183 +1,109 @@
 defmodule Y4mTest do
   use ExUnit.Case
+
   doctest Y4m
-  # doctest Y4m.Loop
+  doctest Y4m.Stream
+  doctest Y4m.Writer
 
-  test "read y4m header" do
-    {:ok, file} =
-      StringIO.open("YUV4MPEG2 W512 H288 F2:1 Ip A1:1 C444 XYSCSS=444 XCOLORRANGE=LIMITED")
+  @tag :stream
+  test "Read all frames from stream" do
+    {file_path, frames} = TestHelper.write_test_file(10)
+    {_props, stream} = Y4m.stream(file_path)
 
-    {props, _stream} = Y4m.stream(file)
-
-    assert props == %{
-             aspect_ratio: [1, 1],
-             color_space: :C444,
-             frame_rate: [2, 1],
-             height: 288,
-             interlacing: :progressive,
-             params: [["COLORRANGE", "LIMITED"], ["YSCSS", "444"]],
-             width: 512
-           }
+    actual_frames = stream |> Enum.to_list()
+    assert 10 == length(actual_frames)
+    assert frames == actual_frames
   end
 
-  test "read y4m header width" do
-    1..16
-    |> Enum.map(fn exp ->
-      w = :math.pow(2, exp)
-      {:ok, f} = StringIO.open("YUV4MPEG2 W#{w} H1 F1:1")
-      {props, _stream} = Y4m.stream(f)
-      assert w == props.width
-    end)
 
-    {:ok, f} = StringIO.open("YUV4MPEG2 Wxxx H1 F1:1")
-    assert {:error, :invalid_width} == Y4m.stream(f)
+  @tag :stream
+  test "Make stream overflow" do
+    {file_path, frames} = TestHelper.write_test_file(10)
+    {_props, stream} = Y4m.stream(file_path)
+
+    # take more frames than available
+    # --> no error first time, like stream
+    actual_frames = stream |> Enum.take(12)
+    assert 10 == length(actual_frames)
+    assert frames == actual_frames
+
+    # overflow stream
+    # --> will raise
+    assert_raise RuntimeError, ~r/^File Stream has been consumed entirely/, fn ->
+      stream |> Enum.take(1)
+    end
   end
 
-  test "read y4m header height" do
-    1..16
-    |> Enum.map(fn exp ->
-      h = :math.pow(2, exp)
-      {:ok, file} = StringIO.open("YUV4MPEG2 W1 H#{h} F1:1")
-      {props, _stream} = Y4m.stream(file)
-      assert h == props.height
-    end)
-
-    {:ok, file} = StringIO.open("YUV4MPEG2 W1 Hxxx F1:1")
-    assert {:error, :invalid_height} == Y4m.stream(file)
-  end
-
-  test "read y4m header frame rate" do
-    1..16
-    |> Enum.map(fn nom ->
-      1..16
-      |> Enum.map(fn den ->
-        {:ok, file} = StringIO.open("YUV4MPEG2 W1 H1 F#{nom}:#{den}")
-        {props, _stream} = Y4m.stream(file)
-        assert [nom, den] == props.frame_rate
-      end)
-    end)
-
-    {:ok, file} = StringIO.open("YUV4MPEG2 W1 H1 Fx:1")
-    assert {:error, :invalid_frame_rate} == Y4m.stream(file)
-
-    {:ok, file} = StringIO.open("YUV4MPEG2 W1 H1 F1:x")
-    assert {:error, :invalid_frame_rate} == Y4m.stream(file)
-
-    {:ok, file} = StringIO.open("YUV4MPEG2 W1 H1 F1?1")
-    assert {:error, :invalid_frame_rate} == Y4m.stream(file)
-  end
-
-  test "read y4m header interlacing" do
-    modes = %{
-      p: :progressive,
-      t: :top_field_first,
-      b: :bottom_field_first,
-      m: :mixed
+  @tag :write
+  test "Write props" do
+    props = %{
+      aspect_ratio: [1, 1],
+      color_space: :C444,
+      frame_rate: [2, 1],
+      height: 288,
+      interlacing: :progressive,
+      params: [["COLORRANGE", "LIMITED"], ["YSCSS", "444"]],
+      width: 512
     }
 
-    for {name, mode} <- modes do
-      {:ok, file} = StringIO.open("YUV4MPEG2 W1 H1 F1:1 I#{name}")
-      {props, _stream} = Y4m.stream(file)
-      assert mode == props.interlacing
-    end
+    Y4m.write("/tmp/test_file.y4m", props)
+    {actual_props, stream} = Y4m.stream("/tmp/test_file.y4m")
 
-    {:ok, file} = StringIO.open("YUV4MPEG2 W1 H1 F1:1 Ix")
-    assert {:error, :invalid_interlacing} == Y4m.stream(file)
+    assert props == actual_props
+    assert 0 == (stream |> Enum.to_list() |> length())
   end
 
-  test "read y4m header aspect ratio" do
-    1..16
-    |> Enum.map(fn nom ->
-      1..16
-      |> Enum.map(fn den ->
-        {:ok, file} = StringIO.open("YUV4MPEG2 W1 H1 A#{nom}:#{den}")
-        {props, _stream} = Y4m.stream(file)
-        assert [nom, den] == props.aspect_ratio
-      end)
-    end)
+  @tag :write
+  test "Write 10 y4m frames" do
+    {frames, _binary} = TestHelper.get_test_frames(10, {2, 3})
+    props = %{ width: 2, height: 3, frame_rate: [2,1], color_space: :C444}
 
-    {:ok, f} = StringIO.open("YUV4MPEG2 W1 H1 Ax:1")
-    assert {:error, :invalid_aspect_ratio} == Y4m.stream(f)
+    {:ok, writer} = Y4m.write("/tmp/test_file.y4m", props)
+    (frames |> Y4m.append(writer))
+    Y4m.Writer.close(writer)
 
-    {:ok, f} = StringIO.open("YUV4MPEG2 W1 H1 A1:x")
-    assert {:error, :invalid_aspect_ratio} == Y4m.stream(f)
-
-    {:ok, f} = StringIO.open("YUV4MPEG2 W1 H1 A1?1")
-    assert {:error, :invalid_aspect_ratio} == Y4m.stream(f)
+    {_props, stream} = Y4m.stream("/tmp/test_file.y4m")
+    actual_frames = stream |> Enum.to_list()
+    assert 10 == length(actual_frames)
+    assert frames == actual_frames
   end
 
-  test "read y4m header color space" do
-    supported_color_spaces = [
-      :C420,
-      :C444
-    ]
+  @tag :this_one
+  test "Copy y4m file" do
+    {file_path, frames} = TestHelper.write_test_file(10, {2, 3})
 
-    for cs <- supported_color_spaces do
-      {:ok, file} = StringIO.open("YUV4MPEG2 W1 H1 #{cs}")
-      {props, _stream} = Y4m.stream(file)
-      assert cs == props.color_space
-    end
-
-    unsupported_color_spaces = [
-      :C420jpeg,
-      :C420paldv,
-      :C422,
-      :Cmono
-    ]
-
-    for cs <- unsupported_color_spaces do
-      {:ok, f} = StringIO.open("YUV4MPEG2 W1 H1 #{cs}")
-      assert {:error, :unsupported_color_space} == Y4m.stream(f)
-    end
-
-    {:ok, f} = StringIO.open("YUV4MPEG2 W1 H1 C123")
-    assert {:error, :invalid_color_space} == Y4m.stream(f)
-  end
-
-  test "iter y4m frames" do
-    file_path = TestHelper.write_test_file(10)
-    {_props, stream} = Y4m.stream(file_path)
-
-    read_frames =
-      stream
-      |> Enum.map(fn [y, u, v] -> [y, u, v] |> Enum.map(&:binary.bin_to_list/1) end)
-      |> Enum.take(11)
-
-    assert 10 == length(read_frames)
-
-    assert Enum.zip([0..9, read_frames])
-           |> Enum.all?(fn {i, f} -> f == [[i, i], [i, i], [i, i]] end)
-  end
-
-  test "iter y4m iter frames nx" do
-    file_path = TestHelper.write_test_file(10)
-    {_props, stream} = Y4m.stream(file_path)
-
-    read_frames =
-      stream
-      |> Enum.map(fn [y, u, v] ->
-        Nx.stack([
-          Nx.from_binary(y, {:u, 8}),
-          Nx.from_binary(u, {:u, 8}),
-          Nx.from_binary(v, {:u, 8})
-        ])
-      end)
-
-    assert 10 == length(read_frames)
-  end
-
-  test "loop y4m" do
-    file_path = TestHelper.write_test_file(2)
-    # take more frames than in file
     {props, stream} = Y4m.stream(file_path)
-    assert %{color_space: :C444, frame_rate: [1, 1], height: 1, width: 2} == props
 
-    [frame] = stream |> Enum.take(1)
-    assert [<<0, 0>>, <<0, 0>>, <<0, 0>>] == frame
-    [frame] = stream |> Enum.take(1)
-    assert [<<1, 1>>, <<1, 1>>, <<1, 1>>] == frame
+    {:ok, writer} = Y4m.write("/tmp/test_file2.y4m", props)
+    frames
+    |> Y4m.append(writer)
+    |> Y4m.Writer.close()
 
-    # end of stream is reached, no more frames
-    assert [] == stream |> Enum.take(1)
+    # files should have equal size
+    assert File.stat!(file_path).size == File.stat!("/tmp/test_file2.y4m").size
+    assert File.read!(file_path) == File.read!("/tmp/test_file2.y4m")
+  end
+
+  test "Invert pixels of y4m file" do
+    invert_pixels = fn [y, u, v] ->
+      [y, u, v] |> Enum.map(fn bin ->
+        for <<i::8 <- bin>>, into: "", do: <<255 - i>>
+      end)
+    end
+
+    {props, stream} = Y4m.stream("test/example.y4m")
+    {:ok, writer} = Y4m.write("test/example_inv.y4m", props)
+
+    # invert frames
+    in_frames = stream |> Enum.to_list()
+    in_frames
+      |> Enum.map(&invert_pixels.(&1))
+      |> Y4m.append(writer)
+      |> Y4m.Writer.close()
+
+    {props, stream} = Y4m.stream("test/example_inv.y4m")
+    actual_frames = stream |> Enum.to_list()
+    assert length(in_frames) == length(actual_frames)
+    assert (in_frames |> Enum.map(&invert_pixels.(&1))) == actual_frames
   end
 end

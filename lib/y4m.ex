@@ -7,12 +7,12 @@ defmodule Y4m do
   ### Open file and count frames in file
   `Y4m.stream` returns a tuple of metadata and a lazy stream.
 
-      iex> {props, stream} = Y4m.stream("my_video.y4m")
+      iex> {props, stream} = Y4m.stream("test/example.y4m")
       iex> props
-      %{aspect_ratio: [1, 1], color_space: :C444, frame_rate: [2, 1], height: 288, interlacing: :progressive, params: [[\"COLORRANGE\", \"LIMITED\"], [\"YSCSS\", \"444\"]], width: 512}
+      %{aspect_ratio: [0, 0], color_space: :C420, frame_rate: [25, 1], height: 288, interlacing: :progressive, width: 384}
       # get number of frames
       iex> stream |> Enum.to_list() |> length()
-      52
+      51
 
 
   ### Using the Stream
@@ -24,7 +24,7 @@ defmodule Y4m do
   with the next frame in the file. This may lead to confusion as a hidden shared state is involved.
   Each frame is a list of binaries.
 
-      iex> {_props, stream} = Y4m.stream("my_video.y4m")
+      iex> {_props, stream} = Y4m.stream("test/example.y4m")
       iex> [<<_y::binary()>>, <<_u::binary>>, <<_v::binary>>] = Enum.at(stream, 0)
       iex> # frames do not match because of shared state
       iex> Enum.at(stream, 0) != Enum.at(stream, 0)
@@ -69,7 +69,7 @@ defmodule Y4m do
       ...> end
       ...>
       iex> # load file with fewer than 420 frames
-      iex> {:ok, loop} = Y4mLoop.start_link("my_video.y4m")
+      iex> {:ok, loop} = Y4mLoop.start_link("test/example.y4m")
       iex> 1..420 |> Enum.map(fn _i -> Y4mLoop.next(loop) end)
   """
 
@@ -78,11 +78,19 @@ defmodule Y4m do
   Returns parsed file header and lazy stream across all frames in file.
 
   ### Examples
-      iex> {:ok, file} = File.open("my_video.y4m")
+      iex> {:ok, file} = File.open("test/example.y4m")
       iex> {_props, stream} = Y4m.stream(file)
       iex> stream |> Enum.take(10)
   """
   @spec stream(binary | pid) :: {%{}, %Y4m.Stream{}} | {:error, atom}
   def stream(file) when is_pid(file), do: Y4m.Stream.init(file)
   def stream(file_path) when is_binary(file_path), do: File.open!(file_path) |> Y4m.Stream.init()
+
+  def write(file_path, props, frames \\ [])
+  def write(file_path, props, frames) when length(frames) == 0 , do: Y4m.Writer.init(file_path, props)
+  def write(file_path, props, frames) when length(frames) > 0 do
+    {:ok, writer} = Y4m.Writer.init(file_path, props)
+    Y4m.append(frames, writer)
+  end
+  def append(frames, writer), do: Y4m.Writer.append(frames, writer)
 end
