@@ -85,7 +85,7 @@ defmodule Y4m.HeaderParser do
     case param |> String.split("=") do
       [name, value] ->
         params = Map.get(props, :params, [])
-        continue(t, Map.put(props, :params, [[name, value] | params]))
+        continue(t, Map.put(props, :params, params ++ [[name, value]]))
 
       _ ->
         # ignore invalid property
