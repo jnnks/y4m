@@ -70,9 +70,10 @@ defmodule Y4m.HeaderParser do
   end
 
   defp continue([<<"C", color_space::binary>> | t], props) do
-    case color_space do
+    case color_space |> String.downcase() do
       "420jpeg" -> {:error, :unsupported_color_space}
       "420paldv" -> {:error, :unsupported_color_space}
+      "420mpeg2" -> continue(t, Map.put(props, :color_space, :C420MPEG2))
       "420" -> continue(t, Map.put(props, :color_space, :C420))
       "422" -> {:error, :unsupported_color_space}
       "444" -> continue(t, Map.put(props, :color_space, :C444))

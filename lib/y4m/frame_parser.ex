@@ -13,6 +13,8 @@ defmodule Y4m.FrameParser do
       trunc(width * height / 2)
     ]
 
+  defp plane_lengths(:C420MPEG2, width, height),
+    do: plane_lengths(:C420, width, height)
   defp plane_lengths(:C420, width, height),
     do: [
       width * height,
