@@ -4,7 +4,7 @@ defmodule Y4m.MixProject do
   def project do
     [
       app: :y4m,
-      version: "0.3.0",
+      version: "0.3.2",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -18,6 +18,7 @@ defmodule Y4m.MixProject do
   defp deps,
     do: [
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
+      {:credo, "~> 1.1", only: :dev, runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:gen_stage, "~> 1.1.2", only: :test, runtime: false},
       {:nx, "~> 0.1", only: :test, runtime: false}
