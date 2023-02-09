@@ -5,6 +5,66 @@ defmodule Y4mTest do
   doctest Y4m.Stream
   doctest Y4m.Writer
 
+  @tag :stream_yuv
+  test "YUV444 Test" do
+    {props, stream} = Y4m.stream("test/videos/test_C444.y4m")
+    frames = Enum.to_list(stream)
+    assert props == %{color_space: :C444, frame_rate: [5, 1], height: 32, width: 32}
+    assert length(frames) == 25
+
+    len_bytes =
+      frames
+      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc  ->
+        acc + (Enum.map(frame, &byte_size/1) |> Enum.sum())
+      end)
+    assert len_bytes == (32 * 32 * 3) * 25
+  end
+
+  @tag :stream_yuv
+  test "YUV422 Test" do
+    {props, stream} = Y4m.stream("test/videos/test_C422.y4m")
+    frames = Enum.to_list(stream)
+    assert props == %{color_space: :C422, frame_rate: [5, 1], height: 32, width: 32}
+    assert length(frames) == 25
+
+    len_bytes =
+      frames
+      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc  ->
+        acc + (Enum.map(frame, &byte_size/1) |> Enum.sum())
+      end)
+    assert len_bytes == (32 * 32 * 2) * 25
+  end
+
+  @tag :stream_yuv
+  test "YUV420 Test" do
+    {props, stream} = Y4m.stream("test/videos/test_C420.y4m")
+    frames = Enum.to_list(stream)
+    assert props == %{color_space: :C420, frame_rate: [5, 1], height: 32, width: 32}
+    assert length(frames) == 25
+
+    len_bytes =
+      frames
+      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc  ->
+        acc + (Enum.map(frame, &byte_size/1) |> Enum.sum())
+      end)
+    assert len_bytes == (32 * 32 * 1.5) * 25
+  end
+
+  @tag :stream_yuv
+  test "YUV400 Test" do
+    {props, stream} = Y4m.stream("test/videos/test_Cmono.y4m")
+    frames = Enum.to_list(stream)
+    assert props == %{color_space: :Cmono, frame_rate: [5, 1], height: 32, width: 32}
+    assert length(frames) == 25
+
+    len_bytes =
+      frames
+      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc  ->
+        acc + (Enum.map(frame, &byte_size/1) |> Enum.sum())
+      end)
+    assert len_bytes == (32 * 32) * 25
+  end
+
   @tag :stream
   test "Read all frames from stream" do
     {file_path, frames} = TestHelper.write_test_file(10)
@@ -92,8 +152,8 @@ defmodule Y4mTest do
       end)
     end
 
-    {props, stream} = Y4m.stream("test/example.y4m")
-    {:ok, writer} = Y4m.write("test/example_inv.y4m", props)
+    {props, stream} = Y4m.stream("test/videos/example.y4m")
+    {:ok, writer} = Y4m.write("test/videos/example_inv.y4m", props)
 
     # invert frames
     in_frames = stream |> Enum.to_list()
@@ -103,7 +163,7 @@ defmodule Y4mTest do
     |> Y4m.append(writer)
     |> Y4m.Writer.close()
 
-    {_props, stream} = Y4m.stream("test/example_inv.y4m")
+    {_props, stream} = Y4m.stream("test/videos/example_inv.y4m")
     actual_frames = stream |> Enum.to_list()
     assert length(in_frames) == length(actual_frames)
     assert in_frames |> Enum.map(&invert_pixels.(&1)) == actual_frames

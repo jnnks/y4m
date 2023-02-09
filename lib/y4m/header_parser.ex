@@ -75,9 +75,9 @@ defmodule Y4m.HeaderParser do
       "420paldv" -> {:error, :unsupported_color_space}
       "420mpeg2" -> continue(t, Map.put(props, :color_space, :C420MPEG2))
       "420" -> continue(t, Map.put(props, :color_space, :C420))
-      "422" -> {:error, :unsupported_color_space}
+      "422" -> continue(t, Map.put(props, :color_space, :C422))
       "444" -> continue(t, Map.put(props, :color_space, :C444))
-      "mono" -> {:error, :unsupported_color_space}
+      "mono" -> continue(t, Map.put(props, :color_space, :Cmono))
       _ -> {:error, :invalid_color_space}
     end
   end

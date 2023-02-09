@@ -114,7 +114,9 @@ defmodule Y4mHeaderTest do
   test "read y4m header color space" do
     supported_color_spaces = [
       :C420,
-      :C444
+      :C444,
+      :C422,
+      :Cmono
     ]
 
     for cs <- supported_color_spaces do
@@ -125,9 +127,7 @@ defmodule Y4mHeaderTest do
 
     unsupported_color_spaces = [
       :C420jpeg,
-      :C420paldv,
-      :C422,
-      :Cmono
+      :C420paldv
     ]
 
     for cs <- unsupported_color_spaces do

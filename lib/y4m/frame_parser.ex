@@ -22,6 +22,13 @@ defmodule Y4m.FrameParser do
       trunc(width * height / 4)
     ]
 
+  defp plane_lengths(:Cmono, width, height),
+    do: [
+      width * height,
+      0,
+      0
+    ]
+
   @doc """
   Read the next frame from the `file`.
   Frame length in bytes depends on `width`, `height` and `color_space`.

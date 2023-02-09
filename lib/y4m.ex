@@ -7,7 +7,7 @@ defmodule Y4m do
   ### Open file and count frames in file
   `Y4m.stream` returns a tuple of metadata and a lazy stream.
 
-      iex> {props, stream} = Y4m.stream("test/example.y4m")
+      iex> {props, stream} = Y4m.stream("test/videos/example.y4m")
       iex> props
       %{aspect_ratio: [0, 0], color_space: :C420, frame_rate: [25, 1], height: 288, interlacing: :progressive, width: 384}
       # get number of frames
@@ -24,7 +24,7 @@ defmodule Y4m do
   with the next frame in the file. This may lead to confusion as a hidden shared state is involved.
   Each frame is a list of binaries.
 
-      iex> {_props, stream} = Y4m.stream("test/example.y4m")
+      iex> {_props, stream} = Y4m.stream("test/videos/example.y4m")
       iex> [<<_y::binary>>, <<_u::binary>>, <<_v::binary>>] = Enum.at(stream, 0)
       iex> # frames do not match because of shared state
       iex> Enum.at(stream, 0) != Enum.at(stream, 0)
@@ -69,7 +69,7 @@ defmodule Y4m do
       ...> end
       ...>
       iex> # load file with fewer than 420 frames
-      iex> {:ok, loop} = Y4mLoop.start_link("test/example.y4m")
+      iex> {:ok, loop} = Y4mLoop.start_link("test/videos/example.y4m")
       iex> 1..420 |> Enum.map(fn _i -> Y4mLoop.next(loop) end)
   """
 
@@ -78,7 +78,7 @@ defmodule Y4m do
   Returns parsed file header and lazy stream across all frames in file.
 
   ### Examples
-      iex> {:ok, file} = File.open("test/example.y4m")
+      iex> {:ok, file} = File.open("test/videos/example.y4m")
       iex> {_props, stream} = Y4m.stream(file)
       iex> stream |> Enum.take(10)
   """
