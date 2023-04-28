@@ -14,10 +14,11 @@ defmodule Y4mTest do
 
     len_bytes =
       frames
-      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc  ->
+      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc ->
         acc + (Enum.map(frame, &byte_size/1) |> Enum.sum())
       end)
-    assert len_bytes == (32 * 32 * 3) * 25
+
+    assert len_bytes == 32 * 32 * 3 * 25
   end
 
   @tag :stream_yuv
@@ -29,10 +30,11 @@ defmodule Y4mTest do
 
     len_bytes =
       frames
-      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc  ->
+      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc ->
         acc + (Enum.map(frame, &byte_size/1) |> Enum.sum())
       end)
-    assert len_bytes == (32 * 32 * 2) * 25
+
+    assert len_bytes == 32 * 32 * 2 * 25
   end
 
   @tag :stream_yuv
@@ -44,10 +46,11 @@ defmodule Y4mTest do
 
     len_bytes =
       frames
-      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc  ->
+      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc ->
         acc + (Enum.map(frame, &byte_size/1) |> Enum.sum())
       end)
-    assert len_bytes == (32 * 32 * 1.5) * 25
+
+    assert len_bytes == 32 * 32 * 1.5 * 25
   end
 
   @tag :stream_yuv
@@ -59,10 +62,11 @@ defmodule Y4mTest do
 
     len_bytes =
       frames
-      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc  ->
+      |> Enum.reduce(0, fn [_y, _u, _v] = frame, acc ->
         acc + (Enum.map(frame, &byte_size/1) |> Enum.sum())
       end)
-    assert len_bytes == (32 * 32) * 25
+
+    assert len_bytes == 32 * 32 * 25
   end
 
   @tag :stream
@@ -167,5 +171,137 @@ defmodule Y4mTest do
     actual_frames = stream |> Enum.to_list()
     assert length(in_frames) == length(actual_frames)
     assert in_frames |> Enum.map(&invert_pixels.(&1)) == actual_frames
+  end
+
+  @tag :buffer
+  test "Buffer C444 Props Test" do
+    {:ok, buffer} = Y4m.Buffer.start_link([])
+    file = File.open!("test/videos/test_C444.y4m")
+
+    # header is longer than 24 bytes
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+
+    # header is shorter than 32 bytes
+    {:props, props} = Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert props == %{color_space: :C444, frame_rate: [5, 1], height: 32, width: 32}
+  end
+
+  @tag :buffer
+  test "Buffer C444 Stream Test" do
+    {:ok, buffer} = Y4m.Buffer.start_link([])
+
+    [_props | frames] =
+      File.stream!("test/videos/test_C444.y4m", [], 1024)
+      |> Stream.map(fn fragment -> Y4m.Buffer.push(buffer, fragment) end)
+      |> Stream.reject(&(&1 == {:error, :need_more_data}))
+      |> Stream.flat_map(fn
+        {:props, props} -> [props]
+        {:frames, frames} -> frames
+      end)
+      |> Enum.to_list()
+
+    assert length(frames) == 25
+    assert Enum.all?(frames, fn frame -> byte_size(frame) == 32 * 32 * 3 end)
+  end
+
+  @tag :buffer
+  test "Buffer C422 Props Test" do
+    {:ok, buffer} = Y4m.Buffer.start_link([])
+    file = File.open!("test/videos/test_C422.y4m")
+
+    # header is longer than 24 bytes
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+
+    # header is shorter than 32 bytes
+    {:props, props} = Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert props == %{color_space: :C422, frame_rate: [5, 1], height: 32, width: 32}
+  end
+
+  @tag :buffer
+  test "Buffer C422 Stream Test" do
+    {:ok, buffer} = Y4m.Buffer.start_link([])
+
+    [_props | frames] =
+      File.stream!("test/videos/test_C422.y4m", [], 1024)
+      |> Stream.map(fn fragment -> Y4m.Buffer.push(buffer, fragment) end)
+      |> Stream.reject(&(&1 == {:error, :need_more_data}))
+      |> Stream.flat_map(fn
+        {:props, props} -> [props]
+        {:frames, frames} -> frames
+      end)
+      |> Enum.to_list()
+
+    assert length(frames) == 25
+    assert Enum.all?(frames, fn frame -> byte_size(frame) == 32 * 32 * 2 end)
+  end
+
+  @tag :buffer
+  test "Buffer C420 Props Test" do
+    {:ok, buffer} = Y4m.Buffer.start_link([])
+    file = File.open!("test/videos/test_C420.y4m")
+
+    # header is longer than 24 bytes
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+
+    # header is shorter than 32 bytes
+    {:props, props} = Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert props == %{color_space: :C420, frame_rate: [5, 1], height: 32, width: 32}
+  end
+
+  @tag :buffer
+  test "Buffer C420 Stream Test" do
+    {:ok, buffer} = Y4m.Buffer.start_link([])
+
+    [_props | frames] =
+      File.stream!("test/videos/test_C420.y4m", [], 1024)
+      |> Stream.map(fn fragment -> Y4m.Buffer.push(buffer, fragment) end)
+      |> Stream.reject(&(&1 == {:error, :need_more_data}))
+      |> Stream.flat_map(fn
+        {:props, props} -> [props]
+        {:frames, frames} -> frames
+      end)
+      |> Enum.to_list()
+
+    assert length(frames) == 25
+    assert Enum.all?(frames, fn frame -> byte_size(frame) == 32 * 32 * 1.5 end)
+  end
+
+  @tag :buffer
+  test "Buffer Cmono Props Test" do
+    {:ok, buffer} = Y4m.Buffer.start_link([])
+    file = File.open!("test/videos/test_Cmono.y4m")
+
+    # header is longer than 24 bytes
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert {:error, :need_more_data} == Y4m.Buffer.push(buffer, IO.binread(file, 8))
+
+    # header is shorter than 32 bytes
+    {:props, props} = Y4m.Buffer.push(buffer, IO.binread(file, 8))
+    assert props == %{color_space: :Cmono, frame_rate: [5, 1], height: 32, width: 32}
+  end
+
+  @tag :buffer
+  test "Buffer Cmono Stream Test" do
+    {:ok, buffer} = Y4m.Buffer.start_link([])
+
+    [_props | frames] =
+      File.stream!("test/videos/test_Cmono.y4m", [], 1024)
+      |> Stream.map(fn fragment -> Y4m.Buffer.push(buffer, fragment) end)
+      |> Stream.reject(&(&1 == {:error, :need_more_data}))
+      |> Stream.flat_map(fn
+        {:props, props} -> [props]
+        {:frames, frames} -> frames
+      end)
+      |> Enum.to_list()
+
+    assert length(frames) == 25
+    assert Enum.all?(frames, fn frame -> byte_size(frame) == 32 * 32 end)
   end
 end

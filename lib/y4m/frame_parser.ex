@@ -1,28 +1,29 @@
 defmodule Y4m.FrameParser do
-  defp plane_lengths(:C444, width, height),
+  def plane_lengths(:C444, width, height),
     do: [
       width * height,
       width * height,
       width * height
     ]
 
-  defp plane_lengths(:C422, width, height),
+  def plane_lengths(:C422, width, height),
     do: [
       width * height,
       trunc(width * height / 2),
       trunc(width * height / 2)
     ]
 
-  defp plane_lengths(:C420MPEG2, width, height),
+  def plane_lengths(:C420MPEG2, width, height),
     do: plane_lengths(:C420, width, height)
-  defp plane_lengths(:C420, width, height),
+
+  def plane_lengths(:C420, width, height),
     do: [
       width * height,
       trunc(width * height / 4),
       trunc(width * height / 4)
     ]
 
-  defp plane_lengths(:Cmono, width, height),
+  def plane_lengths(:Cmono, width, height),
     do: [
       width * height,
       0,
