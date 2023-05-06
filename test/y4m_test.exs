@@ -131,6 +131,25 @@ defmodule Y4mTest do
     assert frames == actual_frames
   end
 
+  @tag :write
+  test "Write 10 y4m list frames" do
+    {frames, _binary} = TestHelper.get_test_frames(10, {2, 3})
+    props = %{width: 2, height: 3, frame_rate: [2, 1], color_space: :C444}
+
+    {:ok, writer} = Y4m.write("/tmp/test_file.y4m", props)
+
+    frames
+    |> Enum.map(fn frame -> Enum.map(frame, &:binary.bin_to_list/1) end)
+    |> Y4m.append(writer)
+
+    Y4m.Writer.close(writer)
+
+    {_props, stream} = Y4m.stream("/tmp/test_file.y4m")
+    actual_frames = stream |> Enum.to_list()
+    assert 10 == length(actual_frames)
+    assert frames == actual_frames
+  end
+
   @tag :this_one
   test "Copy y4m file" do
     {file_path, frames} = TestHelper.write_test_file(10, {2, 3})
@@ -303,5 +322,16 @@ defmodule Y4mTest do
 
     assert length(frames) == 25
     assert Enum.all?(frames, fn frame -> byte_size(frame) == 32 * 32 end)
+  end
+
+  @tag :stream_opts
+  test "Stream Options" do
+    {_props, stream} = Y4m.stream("test/videos/test_C444.y4m")
+    [y, u, v] = Stream.take(stream, 1) |> Enum.at(0)
+    assert is_binary(y) and is_binary(u) and is_binary(v)
+
+    {_props, stream} = Y4m.stream("test/videos/test_C444.y4m", [:list])
+    [y, u, v] = Stream.take(stream, 1) |> Enum.at(0)
+    assert is_list(y) and is_list(u) and is_list(v)
   end
 end

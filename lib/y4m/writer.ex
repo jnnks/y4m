@@ -11,6 +11,10 @@ defmodule Y4m.Writer do
 
   def append(frames, %Y4m.Writer{file: file} = writer) do
     for [y_plane, u_plane, v_plane] <- frames do
+      y_plane = if is_list(y_plane), do: :binary.list_to_bin(y_plane), else: y_plane
+      u_plane = if is_list(u_plane), do: :binary.list_to_bin(u_plane), else: u_plane
+      v_plane = if is_list(v_plane), do: :binary.list_to_bin(v_plane), else: v_plane
+
       IO.binwrite(file, "FRAME\n")
       IO.binwrite(file, y_plane)
       IO.binwrite(file, u_plane)

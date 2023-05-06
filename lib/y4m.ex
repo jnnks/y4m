@@ -82,9 +82,17 @@ defmodule Y4m do
       iex> {_props, stream} = Y4m.stream(file)
       iex> stream |> Enum.take(10)
   """
+  @spec stream(binary | pid, Y4m.Stream.options()) :: {%{}, Enum.t()} | {:error, atom}
+  def stream(file, opts) when is_pid(file), do: Y4m.Stream.init(file, opts)
+
+  def stream(file_path, opts) when is_binary(file_path),
+    do: File.open!(file_path) |> Y4m.Stream.init(opts)
+
+  @doc """
+  Same as stream/2
+  """
   @spec stream(binary | pid) :: {%{}, %Y4m.Stream{}} | {:error, atom}
-  def stream(file) when is_pid(file), do: Y4m.Stream.init(file)
-  def stream(file_path) when is_binary(file_path), do: File.open!(file_path) |> Y4m.Stream.init()
+  def stream(file), do: stream(file, [])
 
   def write(file_path, props, frames \\ [])
 

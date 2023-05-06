@@ -1,13 +1,19 @@
 defmodule Y4m.Stream do
   defstruct [:file, :props]
 
+  # line: convert plane binaries to lists, before emitting them
+  @type option() :: :line
+  @type options() :: [option()] | []
+
   @doc """
   Initialize a Stream of y4m frames.
   The file header is read immediately, but frames are evaluated on demand.
   """
-  @spec init(atom | pid) :: {:error, atom} | {%{}, Enumerable.t()}
-  def init(file) do
+  @spec init(atom | pid, options()) :: {:error, atom} | {%{}, Enumerable.t()}
+  def init(file, opts) do
     header = IO.read(file, :line)
+
+    convert_bin_to_list = :list in opts
 
     case Y4m.HeaderParser.parse(header) do
       {:error, details} ->
@@ -18,6 +24,11 @@ defmodule Y4m.Stream do
           %__MODULE__{file: file, props: props}
           # easy convert to real stream
           |> Stream.map(fn f -> f end)
+
+        stream =
+          if convert_bin_to_list,
+            do: Stream.map(stream, fn planes -> Enum.map(planes, &:binary.bin_to_list/1) end),
+            else: stream
 
         {props, stream}
     end
